@@ -1,0 +1,4 @@
+You've been invited by <%= @admin_invitation.invited_by.display_name %> to become an admin on T10 Properties.
+
+Accept your invitation here (expires <%= @admin_invitation.expires_at.strftime("%B %-d, %Y") %>):
+<%= @accept_url %>

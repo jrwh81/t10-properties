@@ -1,0 +1,21 @@
+# macOS / editors
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Backend (Rails) -- see backend/.gitignore for the authoritative list
+backend/.bundle
+backend/log/*
+backend/tmp/*
+!backend/log/.keep
+!backend/tmp/.keep
+backend/storage/*
+!backend/storage/.keep
+backend/.env
+
+# Frontend (Vite/React) -- see frontend/.gitignore for the authoritative list
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/coverage
