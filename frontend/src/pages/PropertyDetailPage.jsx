@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import { fetchProperty } from "../api/properties";
 import { LoadingState, ErrorState } from "../components/StateHelpers";
+import PhotoSlideshow from "../components/PhotoSlideshow";
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -26,18 +27,7 @@ export default function PropertyDetailPage() {
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <Grid container spacing={5}>
         <Grid item xs={12} md={7}>
-          <Box
-            sx={{
-              height: 420,
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundImage: property.photo_urls?.[0] ? `url(${property.photo_urls[0]})` : "none",
-              backgroundSize: "cover",
-              backgroundPosition: "center"
-            }}
-          />
+          <PhotoSlideshow photos={property.photo_urls} alt={property.title} />
         </Grid>
         <Grid item xs={12} md={5}>
           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>

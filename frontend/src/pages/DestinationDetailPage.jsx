@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import Divider from "@mui/material/Divider";
 import RatingBadge from "../components/Cards/RatingBadge";
 import { fetchDestination } from "../api/destinations";
 import { LoadingState, ErrorState } from "../components/StateHelpers";
+import PhotoSlideshow from "../components/PhotoSlideshow";
 
 export default function DestinationDetailPage() {
   const { slug } = useParams();
@@ -25,18 +25,7 @@ export default function DestinationDetailPage() {
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <Grid container spacing={5}>
         <Grid item xs={12} md={7}>
-          <Box
-            sx={{
-              height: 420,
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              border: "1px solid",
-              borderColor: "divider",
-              backgroundImage: destination.photo_urls?.[0] ? `url(${destination.photo_urls[0]})` : "none",
-              backgroundSize: "cover",
-              backgroundPosition: "center"
-            }}
-          />
+          <PhotoSlideshow photos={destination.photo_urls} alt={destination.name} />
         </Grid>
         <Grid item xs={12} md={5}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>

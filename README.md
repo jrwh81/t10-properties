@@ -79,6 +79,16 @@ npm run dev
 
 ## Changelog
 
+**v19** — Added a photo slideshow to the property and destination detail
+pages (previously only the first photo ever showed). New
+`PhotoSlideshow` component: arrow buttons, dot indicators, a "2 / 5"
+counter, and left/right arrow-key navigation -- deliberately **not**
+auto-advancing, since carousels that move on their own are a well-known
+accessibility anti-pattern, which would be a strange thing to ship given
+what this site is actually about. Falls back to a plain placeholder with
+no controls when there are zero photos, and skips the controls entirely
+for a single photo.
+
 **v18** — Fixed photos never actually rendering, anywhere (admin or
 public pages), even though uploads and deletes worked correctly on the
 backend. `photo_url`/`cover_image_url` used `rails_blob_path(...,
