@@ -1,4 +1,6 @@
 class BlogPostSerializer
+  include ActiveStorageUrlHelper
+
   def initialize(blog_post, detailed: false)
     @blog_post = blog_post
     @detailed = detailed
@@ -13,7 +15,7 @@ class BlogPostSerializer
       status: blog_post.status,
       published_at: blog_post.published_at,
       author_name: blog_post.author&.display_name,
-      cover_image_url: cover_image_url,
+      cover_image_url: blob_url(blog_post.cover_image),
       comments_count: blog_post.comments.approved.count
     }
 
@@ -29,10 +31,4 @@ class BlogPostSerializer
   private
 
   attr_reader :blog_post, :detailed
-
-  def cover_image_url
-    return nil unless blog_post.cover_image&.persisted?
-
-    Rails.application.routes.url_helpers.rails_blob_path(blog_post.cover_image, only_path: true)
-  end
 end

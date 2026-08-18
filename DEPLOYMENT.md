@@ -69,6 +69,20 @@ custom domain, and update it later if it changes:
 heroku config:set --app t10-properties-api FRONTEND_ORIGIN=https://your-frontend-domain.com
 ```
 
+`BACKEND_URL` needs to be this API app's own real URL. Photo/cover-image
+URLs are built as absolute URLs using this value -- without it, they'd
+be relative paths that 404 in the browser, since the frontend and API
+are on different origins:
+
+```bash
+heroku config:set --app t10-properties-api BACKEND_URL=https://t10-properties-api.herokuapp.com
+```
+
+(Use whatever your actual API app URL is -- check with `heroku apps:info
+--app t10-properties-api` if you're not sure, since Heroku sometimes
+assigns a random suffix rather than the plain app name. Update this again
+if you later move to a custom domain for the API.)
+
 Deploy:
 
 ```bash

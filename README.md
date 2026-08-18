@@ -79,6 +79,20 @@ npm run dev
 
 ## Changelog
 
+**v18** — Fixed photos never actually rendering, anywhere (admin or
+public pages), even though uploads and deletes worked correctly on the
+backend. `photo_url`/`cover_image_url` used `rails_blob_path(...,
+only_path: true)`, which returns a *relative* URL -- fine only when the
+frontend and API share one origin, which they never have here (separate
+Heroku apps in production, separate ports in dev). A relative `<img src>`
+resolves against the page's own origin, not the API's, so every photo
+404'd silently. Added `ActiveStorageUrlHelper`, a shared module used by
+`PropertySerializer`/`DestinationSerializer`/`BlogPostSerializer`, that
+builds fully-qualified absolute URLs from a new `BACKEND_URL` env var
+(defaults to `http://localhost:3000` for dev). **Requires setting
+`BACKEND_URL` on the API's Heroku app** -- see `DEPLOYMENT.md`. Added a
+regression spec asserting the returned URLs are absolute.
+
 **v17** — Fixed uploaded photos disappearing on Save. Editing a
 property/destination pre-filled form state by spreading the *entire*
 record (`{ ...EMPTY_FORM, ...initialValues }`), which includes the

@@ -1,4 +1,6 @@
 class DestinationSerializer
+  include ActiveStorageUrlHelper
+
   def initialize(destination, detailed: false)
     @destination = destination
     @detailed = detailed
@@ -15,7 +17,7 @@ class DestinationSerializer
       t10_rating: destination.t10_rating,
       rating_label: destination.rating_label,
       featured: destination.featured,
-      cover_photo_url: photo_url(destination.photos.first)
+      cover_photo_url: blob_url(destination.photos.first)
     }
 
     return base unless detailed
@@ -23,8 +25,8 @@ class DestinationSerializer
     base.merge(
       description: destination.description,
       address: destination.address,
-      photo_urls: destination.photos.map { |photo| photo_url(photo) },
-      photos: destination.photos.map { |photo| { id: photo.id, url: photo_url(photo) } },
+      photo_urls: destination.photos.map { |photo| blob_url(photo) },
+      photos: destination.photos.map { |photo| { id: photo.id, url: blob_url(photo) } },
       created_at: destination.created_at,
       updated_at: destination.updated_at
     )
@@ -33,10 +35,4 @@ class DestinationSerializer
   private
 
   attr_reader :destination, :detailed
-
-  def photo_url(photo)
-    return nil unless photo&.persisted?
-
-    Rails.application.routes.url_helpers.rails_blob_path(photo, only_path: true)
-  end
 end
