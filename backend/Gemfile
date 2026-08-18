@@ -19,6 +19,7 @@ gem "pundit"
 
 # Uploads
 gem "image_processing", "~> 1.2"
+gem "cloudinary"
 gem "activestorage-cloudinary-service"
 
 # Utilities
