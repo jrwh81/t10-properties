@@ -36,14 +36,18 @@ export default function Navbar() {
   return (
     <AppBar position="sticky" elevation={0}>
       <Toolbar sx={{ gap: 2 }}>
-        <Typography
+        <Box
           component={RouterLink}
           to="/"
-          variant="h6"
-          sx={{ textDecoration: "none", color: "primary.main", fontWeight: 900, letterSpacing: "0.03em", flexGrow: isMobile ? 1 : 0 }}
+          sx={{ display: "flex", alignItems: "center", flexGrow: isMobile ? 1 : 0 }}
         >
-          T10<Box component="span" sx={{ color: "secondary.main" }}>&nbsp;PROPERTIES</Box>
-        </Typography>
+          <Box
+            component="img"
+            src="/logos/logo-e-wordmark.png"
+            alt="T10 Properties LLC"
+            sx={{ height: 32, width: "auto", display: "block" }}
+          />
+        </Box>
 
         {!isMobile && (
           <Box sx={{ display: "flex", gap: 1, flexGrow: 1, ml: 4 }}>

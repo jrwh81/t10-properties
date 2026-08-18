@@ -19,6 +19,14 @@ describe("Navbar", () => {
     expect(screen.getByRole("link", { name: "Blog" })).toHaveAttribute("href", "/blog");
   });
 
+  it("shows the logo linking back to the homepage", async () => {
+    renderWithProviders(<Navbar />);
+
+    const logo = await screen.findByAltText("T10 Properties LLC");
+    expect(logo).toHaveAttribute("src", "/logos/logo-e-wordmark.png");
+    expect(logo.closest("a")).toHaveAttribute("href", "/");
+  });
+
   it("does not show an Admin link for anonymous visitors", async () => {
     renderWithProviders(<Navbar />);
     await screen.findByRole("link", { name: /log in/i });

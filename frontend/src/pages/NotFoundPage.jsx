@@ -3,11 +3,13 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 
 export default function NotFoundPage() {
   return (
     <Container maxWidth="sm" sx={{ py: 14, textAlign: "center" }}>
       <Stack spacing={2} alignItems="center">
+        <Box component="img" src="/logos/logo-b-horizontal.png" alt="T10 Properties LLC" sx={{ height: 72, width: "auto", mb: 1 }} />
         <Typography variant="h1" color="primary.main" sx={{ fontSize: "4rem" }}>
           404
         </Typography>

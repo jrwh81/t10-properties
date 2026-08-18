@@ -79,6 +79,30 @@ npm run dev
 
 ## Changelog
 
+**v24** — Two additions. (1) Per-page social share previews: property,
+destination, and blog post links now show that page's own photo and
+title/description when shared, instead of the generic site-wide image.
+Since this SPA has no server-side rendering and link-preview bots don't
+run JavaScript, this needed an actual server: swapped `frontend`'s static
+file serving (`npx serve` via `Procfile`) for a small Express server
+(`frontend/server.js` + `frontend/server/metaHtml.js`, unit tested) that
+detects known bot user agents (Slack, Twitter, iMessage, Discord, etc.),
+fetches the relevant resource server-side, and swaps in page-specific
+`og:title`/`og:description`/`og:image` before sending the HTML -- regular
+visitors get the identical static app as before. Falls back to the
+generic `/og-image.png` when a page has no photo. `DEPLOYMENT.md` updated
+accordingly (it had drifted out of date after an earlier live fix
+switched away from the `heroku-buildpack-static` buildpack mid-session).
+(2) All four provided logo files now actually appear on the site (navbar,
+footer, login/signup, 404 page) -- previously only a crop of one had been
+used, for the favicon/share image, and none were visible in the live UI.
+Each was cropped to its content and given a transparent background via
+flood-fill from the image borders; a plain color-distance threshold
+(the approach used for the original favicon/OG-image crop) incorrectly
+punches holes into these particular logos, since they use black/near-black
+as both the background *and* a real foreground color (character
+silhouettes, a text banner) in places.
+
 **v23** — Stopped fighting jsdom's Clipboard API for real. Two prior
 attempts (`Object.defineProperty`, then `vi.spyOn`) to mock
 `navigator.clipboard.writeText` directly proved unreliable in this test
@@ -326,7 +350,23 @@ React + MUI frontend themed from the logo palette.
   New properties/destinations stay open after creation so photos can be
   added immediately instead of a save-then-reopen round trip.
 - **Theme**: MUI dark theme built directly from colors sampled out of the
-  provided logo files.
+  provided logo files. All four provided logo variants are used across
+  the live site (navbar, footer, login/signup, 404 page), each cropped
+  and converted to a transparent PNG via flood-fill background removal
+  (a plain color-distance threshold punches holes in the artwork itself,
+  since it uses black/near-black as both background *and* a real
+  foreground color in places -- flood-fill from the image borders only
+  removes the connected exterior background).
+- **Social share previews**: property/destination/blog-post links shared
+  on Slack, Twitter, iMessage, Discord, etc. show that page's own photo
+  and title/description, not just the generic site-wide image. Since
+  this is a client-rendered SPA with no per-route meta tags and bots
+  don't run JavaScript, this required swapping `frontend`'s static file
+  server for a small Express server (`frontend/server.js`) that detects
+  known bot user agents and serves them page-specific meta tags fetched
+  server-side from the API -- regular visitors get the exact same static
+  app as before. Falls back to the generic `/og-image.png` when a page
+  has no photo.
 
 ## What's next (v3 candidates)
 

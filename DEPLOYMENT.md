@@ -131,17 +131,34 @@ AWS_BUCKET=...`, and change `config.active_storage.service` in
 `production.rb` to explicitly use `:amazon` instead of the Cloudinary
 check.)
 
-## 3. Frontend: React app on Heroku (static)
+## 3. Frontend: React app on Heroku
 
 ```bash
 cd ~/t10-properties
 heroku create t10-properties-web
-heroku buildpacks:add --app t10-properties-web heroku/nodejs
-heroku buildpacks:add --app t10-properties-web heroku/heroku-buildpack-static
 ```
 
-Set the build-time env vars (Heroku needs these as config vars so Vite
-picks them up during the build step):
+Only the Node buildpack is needed (Heroku detects it automatically from
+`package.json`, no `heroku buildpacks:add` required). Earlier versions of
+this project tried `heroku-buildpack-static`, a community buildpack for
+serving static sites -- it doesn't support the `heroku-24` stack that new
+Heroku apps default to, so it was dropped in favor of a small Express
+server (`frontend/server.js`) run directly via the Node buildpack.
+
+That server does two things: serves the built SPA exactly like a plain
+static file server would (including the SPA fallback so React Router
+deep links/refreshes don't 404), and -- the reason it's a real server
+instead of `serve`/static hosting -- detects known link-preview bots
+(Slack, Twitter, iMessage, Discord, etc.) requesting a specific
+`/properties/:slug`, `/destinations/:slug`, or `/blog/:slug` URL, fetches
+that resource from the API, and serves page-specific `og:title`/
+`og:description`/`og:image` tags instead of the generic site-wide ones.
+Bots don't run JavaScript, so this can only be done server-side, before
+the HTML is sent -- a client-side-only SPA can't do it at all.
+
+Set the env vars (used both at build time by Vite and at runtime by
+`server.js`, since Heroku exposes all config vars to the dyno process
+regardless of the `VITE_` prefix):
 
 ```bash
 heroku config:set --app t10-properties-web \
@@ -157,11 +174,22 @@ git subtree push --prefix=frontend https://git.heroku.com/t10-properties-web.git
 
 Heroku's Node buildpack runs `npm install && npm run build` automatically
 (the `build` script in `frontend/package.json` runs `vite build`), then
-the static buildpack serves the resulting `frontend/dist` directory using
-`frontend/static.json` for SPA routing (so React Router deep links and
-refreshes work instead of 404ing).
+`frontend/Procfile` starts the app with `node server.js`.
 
 Your frontend is now live at `https://t10-properties-web.herokuapp.com`.
+
+**Verifying the bot-preview behavior works:** you can't easily test this
+by just visiting the URL in a normal browser (you're not a bot). Either
+use a platform's own preview-debug tool (e.g. Twitter/X's Card Validator,
+Facebook's Sharing Debugger, or LinkedIn's Post Inspector -- search for
+whichever platform's current tool), or simulate a bot request directly:
+
+```bash
+curl -A "Slackbot-LinkExpanding" https://your-frontend-domain.com/properties/some-slug | grep "og:image"
+```
+
+That should show that property's actual photo URL, not the generic
+`/og-image.png`.
 
 If `FRONTEND_ORIGIN` on the backend doesn't already match this URL (or
 your custom domain from step 4), update it:

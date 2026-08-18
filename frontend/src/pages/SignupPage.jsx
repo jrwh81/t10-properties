@@ -37,6 +37,9 @@ export default function SignupPage() {
   return (
     <Container maxWidth="xs" sx={{ py: 10 }}>
       <Paper sx={{ p: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+          <Box component="img" src="/logos/logo-d-lettermark.png" alt="T10 Properties LLC" sx={{ height: 56, width: "auto" }} />
+        </Box>
         <Typography variant="h4" component="h1" gutterBottom>
           Create an account
         </Typography>
