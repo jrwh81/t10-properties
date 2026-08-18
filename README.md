@@ -79,6 +79,27 @@ npm run dev
 
 ## Changelog
 
+**v17** — Fixed uploaded photos disappearing on Save. Editing a
+property/destination pre-filled form state by spreading the *entire*
+record (`{ ...EMPTY_FORM, ...initialValues }`), which includes the
+`photos` array from the API's detailed serializer. That stale array rode
+along in the "Save changes" payload; strong params stripped its nested
+`{id, url}` objects down to an empty array (they're not permitted
+scalars); and `has_many_attached` treats assignment as a **replace, not
+an append** -- so saving the form after uploading photos silently wiped
+them. Fixed on both ends: the frontend now builds form state from only
+the known editable fields (`PropertyFormDialog`, `DestinationFormDialog`,
+`BlogPostFormDialog`), and `photos: []` was removed from the backend's
+permitted params entirely (photo mutations already go through their own
+dedicated endpoints, so it no longer needs to be reachable from the main
+create/update action at all). Added regression tests on both sides.
+
+**v16** — Fixed `cannot load such file -- cloudinary (LoadError)` on
+boot. `activestorage-cloudinary-service`'s service file requires the base
+`cloudinary` Ruby SDK gem, but doesn't declare it as a hard dependency --
+it was missing from the Gemfile entirely. Added `gem "cloudinary"`
+alongside it.
+
 **v15** — Wired up Cloudinary for real, persistent photo storage (chosen
 over S3: one env var instead of four, free tier that never expires, no
 IAM setup). Added the `activestorage-cloudinary-service` gem, a

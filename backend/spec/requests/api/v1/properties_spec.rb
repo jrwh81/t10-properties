@@ -89,6 +89,49 @@ RSpec.describe "Api::V1::Properties", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/properties/:slug" do
+    it "does not touch attached photos when updating other fields" do
+      property = create(:property)
+      property.photos.attach(
+        io: StringIO.new("fake-image-bytes"),
+        filename: "photo.jpg",
+        content_type: "image/jpeg"
+      )
+      expect(property.photos.count).to eq(1)
+
+      patch "/api/v1/properties/#{property.slug}",
+        params: { property: { title: "Renamed" } },
+        headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      expect(property.reload.photos.count).to eq(1)
+      expect(JSON.parse(response.body)["property"]["photos"].size).to eq(1)
+    end
+
+    # Regression test: `photos` must never be a strong-params-permitted
+    # field on update. has_many_attached assignment REPLACES all
+    # attachments rather than appending, so even an unpermitted/stripped
+    # `photos` value riding along in a request (e.g. because the client
+    # naively spread a full record -- including its photos array -- into
+    # an update payload) would silently wipe every attached photo if this
+    # were ever permitted again.
+    it "ignores a photos param instead of wiping existing attachments" do
+      property = create(:property)
+      property.photos.attach(
+        io: StringIO.new("fake-image-bytes"),
+        filename: "photo.jpg",
+        content_type: "image/jpeg"
+      )
+
+      patch "/api/v1/properties/#{property.slug}",
+        params: { property: { title: "Renamed", photos: [{ id: 1, url: "/old.jpg" }] } },
+        headers: auth_headers(admin)
+
+      expect(response).to have_http_status(:ok)
+      expect(property.reload.photos.count).to eq(1)
+    end
+  end
+
   describe "DELETE /api/v1/properties/:slug" do
     it "allows an admin to delete a property" do
       property = create(:property)

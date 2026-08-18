@@ -50,7 +50,7 @@ module Api
       def destination_params
         params.require(:destination).permit(
           :name, :description, :address, :city, :state, :category,
-          :t10_rating, :featured, photos: []
+          :t10_rating, :featured
         )
       end
     end

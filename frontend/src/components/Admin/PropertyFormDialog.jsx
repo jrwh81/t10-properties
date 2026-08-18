@@ -37,6 +37,20 @@ const EMPTY_FORM = {
 
 const REQUIRED_FIELDS = ["title", "description", "address", "city", "state", "zip_code", "price"];
 
+// Build form state from ONLY the known editable fields -- never spread a
+// full record (property/destination) into form state. Records also carry
+// `photos`, `slug`, timestamps, etc., and letting `photos` ride along in
+// an update payload is actively dangerous: has_many_attached treats
+// assignment as a REPLACE, so a stray/empty `photos` value silently wipes
+// every photo that was just uploaded via the PhotoManager.
+function pickFormFields(source) {
+  const picked = {};
+  for (const key of Object.keys(EMPTY_FORM)) {
+    picked[key] = key in source ? source[key] : EMPTY_FORM[key];
+  }
+  return picked;
+}
+
 // `onCreate`/`onUpdate` each resolve with the full saved property
 // (including `photos`). On create, the dialog stays open and switches
 // into "edit" mode with the new record so photos can be added right
@@ -50,7 +64,7 @@ export default function PropertyFormDialog({ open, onClose, onCreate, onUpdate, 
   useEffect(() => {
     if (open) {
       setRecord(initialValues || null);
-      setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
+      setForm(initialValues ? pickFormFields(initialValues) : EMPTY_FORM);
       setError(null);
     }
   }, [open, initialValues]);

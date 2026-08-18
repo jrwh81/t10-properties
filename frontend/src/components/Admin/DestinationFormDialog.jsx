@@ -30,6 +30,18 @@ const EMPTY_FORM = {
 
 const REQUIRED_FIELDS = ["name", "description", "city", "state", "t10_rating"];
 
+// See PropertyFormDialog for why this matters: never spread a full
+// record into form state, since `photos` riding along in an update
+// payload silently wipes every attached photo (has_many_attached
+// assignment REPLACES, it doesn't append).
+function pickFormFields(source) {
+  const picked = {};
+  for (const key of Object.keys(EMPTY_FORM)) {
+    picked[key] = key in source ? source[key] : EMPTY_FORM[key];
+  }
+  return picked;
+}
+
 export default function DestinationFormDialog({ open, onClose, onCreate, onUpdate, onUploadPhotos, onDeletePhoto, initialValues }) {
   const [record, setRecord] = useState(initialValues || null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -39,7 +51,7 @@ export default function DestinationFormDialog({ open, onClose, onCreate, onUpdat
   useEffect(() => {
     if (open) {
       setRecord(initialValues || null);
-      setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
+      setForm(initialValues ? pickFormFields(initialValues) : EMPTY_FORM);
       setError(null);
     }
   }, [open, initialValues]);

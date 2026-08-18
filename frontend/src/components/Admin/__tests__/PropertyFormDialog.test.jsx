@@ -139,6 +139,39 @@ describe("PropertyFormDialog", () => {
     );
   });
 
+  // Regression test: the record passed in as `initialValues` carries a
+  // `photos` array (from the API's detailed serializer). Save must never
+  // let that stale array ride along in the update payload -- has_many_attached
+  // treats assignment as a REPLACE, so sending it back would silently wipe
+  // every photo that was uploaded via the PhotoManager.
+  it("never includes photos in the update payload, even though the record has them", async () => {
+    const user = userEvent.setup();
+    const initialValues = {
+      slug: "existing-home",
+      title: "Existing Home",
+      description: "Already here.",
+      address: "1 Main St",
+      city: "Pittsburgh",
+      state: "PA",
+      zip_code: "15222",
+      price: 200000,
+      property_type: "condo",
+      status: "pending",
+      featured: false,
+      photos: [{ id: 1, url: "/photo1.jpg" }, { id: 2, url: "/photo2.jpg" }]
+    };
+    const props = renderDialog({
+      initialValues,
+      onUpdate: vi.fn().mockResolvedValue(initialValues)
+    });
+
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => expect(props.onUpdate).toHaveBeenCalled());
+    const [, payload] = props.onUpdate.mock.calls[0];
+    expect(payload).not.toHaveProperty("photos");
+  });
+
   it("uploads photos for an existing property", async () => {
     const user = userEvent.setup();
     const initialValues = {

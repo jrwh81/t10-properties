@@ -22,6 +22,17 @@ const EMPTY_FORM = {
 
 const REQUIRED_FIELDS = ["title", "body"];
 
+// Same reasoning as PropertyFormDialog/DestinationFormDialog: never
+// spread a full record into form state (it also carries slug,
+// comments_count, author_name, cover_image_url, timestamps, etc.).
+function pickFormFields(source) {
+  const picked = {};
+  for (const key of Object.keys(EMPTY_FORM)) {
+    picked[key] = key in source ? source[key] : EMPTY_FORM[key];
+  }
+  return picked;
+}
+
 export default function BlogPostFormDialog({ open, onClose, onSubmit, initialValues }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [coverImageFile, setCoverImageFile] = useState(null);
@@ -31,7 +42,7 @@ export default function BlogPostFormDialog({ open, onClose, onSubmit, initialVal
 
   useEffect(() => {
     if (open) {
-      setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
+      setForm(initialValues ? pickFormFields(initialValues) : EMPTY_FORM);
       setCoverImageFile(null);
       setError(null);
     }

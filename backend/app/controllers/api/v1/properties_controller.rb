@@ -51,7 +51,7 @@ module Api
         params.require(:property).permit(
           :title, :description, :address, :city, :state, :zip_code, :price,
           :bedrooms, :bathrooms, :square_feet, :property_type, :status,
-          :featured, :listed_at, photos: []
+          :featured, :listed_at
         )
       end
     end
