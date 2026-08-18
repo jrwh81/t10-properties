@@ -16,10 +16,12 @@ import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
 import ContentCopyIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import { createAdminInvitation, deleteAdminInvitation, fetchAdminInvitations } from "../../api/adminInvitations";
 import { ErrorState, LoadingState } from "../../components/StateHelpers";
+import InviteLinkDialog from "../../components/Admin/InviteLinkDialog";
 
 export default function AdminInvitationsPage() {
   const queryClient = useQueryClient();
@@ -34,15 +36,19 @@ export default function AdminInvitationsPage() {
 
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState(null);
-  const [copiedId, setCopiedId] = useState(null);
+  // Holds the invitation currently shown in the link modal -- set right
+  // after a successful create (the "notify the admin" moment), or when
+  // reopening the link for an existing pending invite from the table.
+  const [linkDialogInvite, setLinkDialogInvite] = useState(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] });
 
   const createMutation = useMutation({
     mutationFn: (emailToInvite) => createAdminInvitation(emailToInvite),
-    onSuccess: () => {
+    onSuccess: (invitation) => {
       setEmail("");
       invalidate();
+      setLinkDialogInvite(invitation);
     }
   });
 
@@ -56,14 +62,6 @@ export default function AdminInvitationsPage() {
     } catch (submitError) {
       setFormError(submitError?.response?.data?.errors?.join(", ") || "Could not send that invitation.");
     }
-  };
-
-  const handleCopy = async (invitation) => {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(invitation.accept_url);
-    }
-    setCopiedId(invitation.id);
-    setTimeout(() => setCopiedId(null), 1500);
   };
 
   return (
@@ -95,7 +93,8 @@ export default function AdminInvitationsPage() {
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Email delivery isn&apos;t configured yet — copy the invite link and send it to them directly.
+        Email delivery isn&apos;t configured yet — after you send an invite, you&apos;ll get a link to copy
+        and send to them yourself.
       </Typography>
 
       {isLoading && <LoadingState />}
@@ -110,6 +109,7 @@ export default function AdminInvitationsPage() {
                 <TableCell>Invited by</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Expires</TableCell>
+                <TableCell>Link</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -127,9 +127,31 @@ export default function AdminInvitationsPage() {
                     />
                   </TableCell>
                   <TableCell>{new Date(invitation.expires_at).toLocaleDateString()}</TableCell>
+                  <TableCell sx={{ maxWidth: 220 }}>
+                    <Link
+                      component="button"
+                      type="button"
+                      onClick={() => setLinkDialogInvite(invitation)}
+                      underline="hover"
+                      sx={{
+                        display: "block",
+                        maxWidth: "100%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        textAlign: "left"
+                      }}
+                    >
+                      {invitation.accept_url}
+                    </Link>
+                  </TableCell>
                   <TableCell align="right">
-                    <Tooltip title={copiedId === invitation.id ? "Copied!" : "Copy invite link"}>
-                      <IconButton size="small" onClick={() => handleCopy(invitation)} aria-label={`copy invite link for ${invitation.email}`}>
+                    <Tooltip title="Copy invite link">
+                      <IconButton
+                        size="small"
+                        onClick={() => setLinkDialogInvite(invitation)}
+                        aria-label={`copy invite link for ${invitation.email}`}
+                      >
                         <ContentCopyIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -145,7 +167,7 @@ export default function AdminInvitationsPage() {
               ))}
               {invitations.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <Typography color="text.secondary">No pending invitations.</Typography>
                   </TableCell>
                 </TableRow>
@@ -154,6 +176,13 @@ export default function AdminInvitationsPage() {
           </Table>
         </TableContainer>
       )}
+
+      <InviteLinkDialog
+        open={Boolean(linkDialogInvite)}
+        onClose={() => setLinkDialogInvite(null)}
+        email={linkDialogInvite?.email}
+        url={linkDialogInvite?.accept_url}
+      />
     </Box>
   );
 }

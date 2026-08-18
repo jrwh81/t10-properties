@@ -79,6 +79,41 @@ npm run dev
 
 ## Changelog
 
+**v23** — Stopped fighting jsdom's Clipboard API for real. Two prior
+attempts (`Object.defineProperty`, then `vi.spyOn`) to mock
+`navigator.clipboard.writeText` directly proved unreliable in this test
+environment -- likely because the real Clipboard API is gated behind
+secure/HTTPS contexts, which the jsdom test origin isn't. Extracted the
+actual clipboard call into `utils/clipboard.js` (`copyToClipboard`), used
+by `InviteLinkDialog`, so tests can `vi.mock()` that small module instead
+-- the same reliable pattern already used for every API call in this
+project, sidestepping jsdom's Clipboard API entirely.
+
+**v22** — Fixed `InviteLinkDialog`'s clipboard test for real this time.
+`Object.defineProperty(navigator, "clipboard", { value: {...} })` was
+still not being recognized as the active spy at assertion time in this
+jsdom/Vitest setup (root cause not fully pinned down, likely userEvent or
+jsdom internals re-reading `navigator.clipboard` in a way that bypassed
+the replaced object). Switched to the standard, reliable pattern instead:
+ensure `navigator.clipboard`/`writeText` exist, then `vi.spyOn` the
+method directly and assert against that spy reference rather than
+re-reading `navigator.clipboard.writeText` at assertion time.
+
+**v21** — Fixed `InviteLinkDialog` test setup: `navigator.clipboard` is a
+getter-only property in this jsdom/Vitest environment, so plain
+`Object.assign(navigator, { clipboard: ... })` silently fails to actually
+mock it. Switched to `Object.defineProperty(navigator, "clipboard", {
+value: ..., configurable: true })`, which can override a getter-only
+property.
+
+**v20** — Added a themed `InviteLinkDialog` modal that pops up
+immediately after sending an admin invite (email delivery still isn't
+configured, so this is the actual "notify them" step) -- shows the
+invitee's email and the full accept link with a one-click copy button.
+The invitations table also now shows the link itself (truncated, click
+to reopen the same modal) instead of only a bare copy icon with no
+visible link text.
+
 **v19** — Added a photo slideshow to the property and destination detail
 pages (previously only the first photo ever showed). New
 `PhotoSlideshow` component: arrow buttons, dot indicators, a "2 / 5"
