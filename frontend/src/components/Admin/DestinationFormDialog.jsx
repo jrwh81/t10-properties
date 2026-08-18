@@ -9,9 +9,11 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Alert from "@mui/material/Alert";
+import PhotoManager from "./PhotoManager";
 
 const CATEGORIES = ["restaurant", "outdoors", "nightlife", "museum", "shopping", "lodging", "other"];
 
@@ -28,13 +30,15 @@ const EMPTY_FORM = {
 
 const REQUIRED_FIELDS = ["name", "description", "city", "state", "t10_rating"];
 
-export default function DestinationFormDialog({ open, onClose, onSubmit, initialValues }) {
+export default function DestinationFormDialog({ open, onClose, onCreate, onUpdate, onUploadPhotos, onDeletePhoto, initialValues }) {
+  const [record, setRecord] = useState(initialValues || null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
+      setRecord(initialValues || null);
       setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
       setError(null);
     }
@@ -60,11 +64,13 @@ export default function DestinationFormDialog({ open, onClose, onSubmit, initial
       return;
     }
 
+    const payload = { ...form, t10_rating: rating };
+
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit({ ...form, t10_rating: rating });
-      onClose();
+      const saved = record ? await onUpdate(record.slug, payload) : await onCreate(payload);
+      setRecord(saved);
     } catch (submitError) {
       setError(submitError?.response?.data?.errors?.join(", ") || "Could not save this destination.");
     } finally {
@@ -72,9 +78,19 @@ export default function DestinationFormDialog({ open, onClose, onSubmit, initial
     }
   };
 
+  const handleUploadPhotos = async (files) => {
+    const updated = await onUploadPhotos(record.slug, files);
+    setRecord(updated);
+  };
+
+  const handleDeletePhoto = async (photoId) => {
+    await onDeletePhoto(record.slug, photoId);
+    setRecord((prev) => ({ ...prev, photos: prev.photos.filter((p) => p.id !== photoId) }));
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{initialValues ? "Edit destination" : "New destination"}</DialogTitle>
+      <DialogTitle>{record ? "Edit destination" : "New destination"}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
           <Stack spacing={2}>
@@ -126,14 +142,21 @@ export default function DestinationFormDialog({ open, onClose, onSubmit, initial
               control={<Switch checked={form.featured} onChange={handleChange("featured")} />}
               label="Featured"
             />
+
+            {record && (
+              <>
+                <Divider />
+                <PhotoManager photos={record.photos} onUpload={handleUploadPhotos} onDelete={handleDeletePhoto} />
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose} color="inherit">
-            Cancel
+            {record ? "Done" : "Cancel"}
           </Button>
           <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            {submitting ? "Saving..." : "Save"}
+            {submitting ? "Saving..." : record ? "Save changes" : "Create destination"}
           </Button>
         </DialogActions>
       </Box>

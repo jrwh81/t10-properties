@@ -12,3 +12,9 @@ amazon:
   secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
   region: <%= ENV.fetch("AWS_REGION", "us-east-1") %>
   bucket: <%= ENV["AWS_BUCKET"] %>
+
+# Credentials come from a single CLOUDINARY_URL env var
+# (cloudinary://API_KEY:API_SECRET@CLOUD_NAME), auto-read by the
+# cloudinary gem -- nothing else to configure here.
+cloudinary:
+  service: Cloudinary

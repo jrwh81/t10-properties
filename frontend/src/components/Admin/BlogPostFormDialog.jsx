@@ -8,6 +8,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 
 const STATUSES = ["draft", "published"];
@@ -23,17 +24,36 @@ const REQUIRED_FIELDS = ["title", "body"];
 
 export default function BlogPostFormDialog({ open, onClose, onSubmit, initialValues }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState(null);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
+      setCoverImageFile(null);
       setError(null);
     }
   }, [open, initialValues]);
 
+  // Build (and clean up) an object URL preview whenever a new file is chosen.
+  useEffect(() => {
+    if (!coverImageFile) {
+      setCoverPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverImageFile);
+    setCoverPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverImageFile]);
+
   const handleChange = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) setCoverImageFile(file);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -47,7 +67,8 @@ export default function BlogPostFormDialog({ open, onClose, onSubmit, initialVal
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(form);
+      const payload = coverImageFile ? { ...form, cover_image: coverImageFile } : form;
+      await onSubmit(payload);
       onClose();
     } catch (submitError) {
       setError(submitError?.response?.data?.errors?.join(", ") || "Could not save this post.");
@@ -55,6 +76,8 @@ export default function BlogPostFormDialog({ open, onClose, onSubmit, initialVal
       setSubmitting(false);
     }
   };
+
+  const displayedPreview = coverPreviewUrl || initialValues?.cover_image_url;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -87,6 +110,33 @@ export default function BlogPostFormDialog({ open, onClose, onSubmit, initialVal
                 </MenuItem>
               ))}
             </TextField>
+
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Cover image
+              </Typography>
+              {displayedPreview && (
+                <Box
+                  component="img"
+                  src={displayedPreview}
+                  alt=""
+                  sx={{
+                    width: "100%",
+                    maxHeight: 200,
+                    objectFit: "cover",
+                    borderRadius: 1,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    mb: 1,
+                    display: "block"
+                  }}
+                />
+              )}
+              <Button component="label" variant="outlined" size="small">
+                {coverImageFile ? "Change image" : displayedPreview ? "Replace image" : "Choose image"}
+                <input type="file" accept="image/*" hidden onChange={handleFileChange} />
+              </Button>
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>

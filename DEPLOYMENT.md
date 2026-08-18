@@ -84,11 +84,38 @@ heroku run --app t10-properties-api rails db:seed
 
 Your API is now live at `https://t10-properties-api.herokuapp.com`.
 
-**Known follow-up:** photo uploads use Active Storage's `:amazon` (S3)
-service in production (`backend/config/storage.yml`), which needs
-`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and
-`AWS_BUCKET` config vars set. Until then, everything else works fine --
-property/destination/blog photo *uploads* just won't succeed.
+**Photo storage: Cloudinary.** The app is already wired for it
+(`activestorage-cloudinary-service` gem, `config/storage.yml`, and
+`production.rb` all set up), it just needs one env var. Without it, photo
+uploads fall back to Active Storage's `:local` service, which writes to
+the dyno's ephemeral filesystem -- files are lost on every
+restart/redeploy (Heroku recycles dynos at least once every ~24h even
+without a deploy), so the app still runs fine but shouldn't be relied on
+for real photo uploads until this is set:
+
+1. Sign up for a free Cloudinary account: <https://cloudinary.com/users/register/free>
+   (25 credits/month free forever, no card required -- 1 credit = 1GB
+   storage/bandwidth/1,000 transformations, plenty for an MVP).
+2. On the Cloudinary dashboard, find the **API Environment variable** --
+   it's a ready-to-copy string that looks like
+   `cloudinary://123456789012345:AbCdEfGhIjKlMnOpQrStUvWxYz@your-cloud-name`.
+3. Set it on Heroku:
+   ```bash
+   heroku config:set --app t10-properties-api CLOUDINARY_URL=cloudinary://your-copied-value
+   ```
+   That's it -- no code change or redeploy needed, since
+   `production.rb` checks for this var at boot and switches to Cloudinary
+   automatically once it's present. Existing photos already uploaded to
+   `:local` storage are not migrated (they were ephemeral anyway); just
+   re-upload them through the admin UI after this is set.
+
+(If you'd rather use AWS S3 instead: add `gem "aws-sdk-s3", require:
+false` to `backend/Gemfile`, run `bundle install`, commit
+`Gemfile.lock`, create a bucket + IAM credentials, `heroku config:set
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_REGION=...
+AWS_BUCKET=...`, and change `config.active_storage.service` in
+`production.rb` to explicitly use `:amazon` instead of the Cloudinary
+check.)
 
 ## 3. Frontend: React app on Heroku (static)
 

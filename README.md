@@ -79,6 +79,38 @@ npm run dev
 
 ## Changelog
 
+**v15** — Wired up Cloudinary for real, persistent photo storage (chosen
+over S3: one env var instead of four, free tier that never expires, no
+IAM setup). Added the `activestorage-cloudinary-service` gem, a
+`cloudinary` entry in `storage.yml`, and `production.rb` now
+auto-detects `CLOUDINARY_URL` -- uses Cloudinary if it's set, falls back
+to the ephemeral `:local` service if not (so the app still boots either
+way rather than crashing if someone forgets to set it). `DEPLOYMENT.md`
+has the exact signup + config steps.
+
+**v14** — Added photo upload UI to the admin CMS (previously the API
+endpoints existed with no frontend to call them). Property and
+destination forms now have a full photo manager: thumbnail grid, add
+multiple photos, delete individually. Blog posts get a single cover-image
+picker with preview. New properties/destinations stay open after creation
+(switching into "edit" mode with the saved record) so photos can be added
+right away instead of save-then-reopen. Backend: `PropertySerializer` and
+`DestinationSerializer` now include `photos: [{id, url}]` in their
+detailed view (previously only bare `photo_urls` strings, with no ID to
+delete an individual photo by).
+
+**v13** — Fixed a production boot failure discovered on the first real
+Heroku deploy: `config.active_storage.service = :amazon` in
+`production.rb` requires the `aws-sdk-s3` gem, which was never added to
+the Gemfile, and Rails validates the configured Active Storage service
+the moment any model with `has_many_attached`/`has_one_attached` loads --
+not just when something is actually uploaded -- so this broke every
+single request in production (`rails db:seed`, page loads, everything).
+Switched to Active Storage's `:local` service so the app actually boots;
+this is ephemeral on Heroku (files are lost on restart/redeploy), so
+`DEPLOYMENT.md` now has concrete steps for migrating to S3 (or similar)
+before photo uploads are something a real user should rely on.
+
 **v12** — Added Heroku deployment support: `backend/Procfile` (web +
 release-phase migration), pinned the Gemfile's Ruby version to an exact
 `3.2.2` (matches `.tool-versions`; Heroku's buildpack wants one specific
@@ -208,14 +240,16 @@ React + MUI frontend themed from the logo palette.
 - **Admin CMS** (`/admin`, admin-only): tabbed dashboard for creating,
   editing, and deleting properties, destinations, and blog posts, plus an
   "Admins" tab for sending invites and copying the accept link (no email
-  delivery is configured yet, so the link is copy/paste for now).
+  delivery is configured yet, so the link is copy/paste for now). Property
+  and destination forms include full photo management (upload multiple,
+  delete individually); blog posts have a single cover-image picker.
+  New properties/destinations stay open after creation so photos can be
+  added immediately instead of a save-then-reopen round trip.
 - **Theme**: MUI dark theme built directly from colors sampled out of the
   provided logo files.
 
 ## What's next (v3 candidates)
 
-- Photo upload UI (drag/drop) on the frontend; the API endpoints
-  (`POST /api/v1/properties/:slug/photos`, etc.) are already in place.
 - Comment moderation queue UI for admins (approve/reject unapproved
   comments -- the `approved` flag and API support already exist).
 - Pagination controls in the frontend (the API already returns `meta`

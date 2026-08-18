@@ -24,6 +24,7 @@ class DestinationSerializer
       description: destination.description,
       address: destination.address,
       photo_urls: destination.photos.map { |photo| photo_url(photo) },
+      photos: destination.photos.map { |photo| { id: photo.id, url: photo_url(photo) } },
       created_at: destination.created_at,
       updated_at: destination.updated_at
     )

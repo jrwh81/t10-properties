@@ -9,9 +9,11 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Alert from "@mui/material/Alert";
+import PhotoManager from "./PhotoManager";
 
 const PROPERTY_TYPES = ["single_family", "multi_family", "condo", "townhouse", "land", "commercial"];
 const STATUSES = ["active", "pending", "sold", "off_market"];
@@ -35,13 +37,19 @@ const EMPTY_FORM = {
 
 const REQUIRED_FIELDS = ["title", "description", "address", "city", "state", "zip_code", "price"];
 
-export default function PropertyFormDialog({ open, onClose, onSubmit, initialValues }) {
+// `onCreate`/`onUpdate` each resolve with the full saved property
+// (including `photos`). On create, the dialog stays open and switches
+// into "edit" mode with the new record so photos can be added right
+// away instead of forcing a "save, reopen, then add photos" round trip.
+export default function PropertyFormDialog({ open, onClose, onCreate, onUpdate, onUploadPhotos, onDeletePhoto, initialValues }) {
+  const [record, setRecord] = useState(initialValues || null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
+      setRecord(initialValues || null);
       setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
       setError(null);
     }
@@ -61,18 +69,20 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
       return;
     }
 
+    const payload = {
+      ...form,
+      price: Number(form.price),
+      bedrooms: form.bedrooms === "" ? null : Number(form.bedrooms),
+      bathrooms: form.bathrooms === "" ? null : Number(form.bathrooms),
+      square_feet: form.square_feet === "" ? null : Number(form.square_feet),
+      listed_at: form.listed_at || null
+    };
+
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit({
-        ...form,
-        price: Number(form.price),
-        bedrooms: form.bedrooms === "" ? null : Number(form.bedrooms),
-        bathrooms: form.bathrooms === "" ? null : Number(form.bathrooms),
-        square_feet: form.square_feet === "" ? null : Number(form.square_feet),
-        listed_at: form.listed_at || null
-      });
-      onClose();
+      const saved = record ? await onUpdate(record.slug, payload) : await onCreate(payload);
+      setRecord(saved);
     } catch (submitError) {
       setError(submitError?.response?.data?.errors?.join(", ") || "Could not save this property.");
     } finally {
@@ -80,9 +90,19 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
     }
   };
 
+  const handleUploadPhotos = async (files) => {
+    const updated = await onUploadPhotos(record.slug, files);
+    setRecord(updated);
+  };
+
+  const handleDeletePhoto = async (photoId) => {
+    await onDeletePhoto(record.slug, photoId);
+    setRecord((prev) => ({ ...prev, photos: prev.photos.filter((p) => p.id !== photoId) }));
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{initialValues ? "Edit property" : "New property"}</DialogTitle>
+      <DialogTitle>{record ? "Edit property" : "New property"}</DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
           <Stack spacing={2}>
@@ -188,14 +208,21 @@ export default function PropertyFormDialog({ open, onClose, onSubmit, initialVal
               control={<Switch checked={form.featured} onChange={handleChange("featured")} />}
               label="Featured"
             />
+
+            {record && (
+              <>
+                <Divider />
+                <PhotoManager photos={record.photos} onUpload={handleUploadPhotos} onDelete={handleDeletePhoto} />
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose} color="inherit">
-            Cancel
+            {record ? "Done" : "Cancel"}
           </Button>
           <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            {submitting ? "Saving..." : "Save"}
+            {submitting ? "Saving..." : record ? "Save changes" : "Create property"}
           </Button>
         </DialogActions>
       </Box>

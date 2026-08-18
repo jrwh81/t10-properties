@@ -23,3 +23,14 @@ export async function updateDestination(slug, payload) {
 export async function deleteDestination(slug) {
   await client.delete(`/destinations/${slug}`);
 }
+
+export async function uploadDestinationPhotos(slug, files) {
+  const formData = new FormData();
+  Array.from(files).forEach((file) => formData.append("photos[]", file));
+  const { data } = await client.post(`/destinations/${slug}/photos`, formData);
+  return data.destination;
+}
+
+export async function deleteDestinationPhoto(slug, photoId) {
+  await client.delete(`/destinations/${slug}/photos/${photoId}`);
+}

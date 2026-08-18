@@ -16,7 +16,15 @@ import Typography from "@mui/material/Typography";
 import EditIcon from "@mui/icons-material/EditOutlined";
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
-import { createProperty, deleteProperty, fetchProperties, fetchProperty, updateProperty } from "../../api/properties";
+import {
+  createProperty,
+  deleteProperty,
+  deletePropertyPhoto,
+  fetchProperties,
+  fetchProperty,
+  updateProperty,
+  uploadPropertyPhotos
+} from "../../api/properties";
 import PropertyFormDialog from "../../components/Admin/PropertyFormDialog";
 import ConfirmDialog from "../../components/Admin/ConfirmDialog";
 import { ErrorState, LoadingState } from "../../components/StateHelpers";
@@ -42,6 +50,8 @@ export default function AdminPropertiesPage() {
     onSuccess: invalidate
   });
   const deleteMutation = useMutation({ mutationFn: (slug) => deleteProperty(slug), onSuccess: invalidate });
+  const uploadPhotosMutation = useMutation({ mutationFn: ({ slug, files }) => uploadPropertyPhotos(slug, files) });
+  const deletePhotoMutation = useMutation({ mutationFn: ({ slug, photoId }) => deletePropertyPhoto(slug, photoId) });
 
   const openCreate = () => {
     setEditing(null);
@@ -49,20 +59,17 @@ export default function AdminPropertiesPage() {
   };
 
   // The list endpoint only returns summary fields -- fetch the full
-  // record before opening the edit form so fields like description and
-  // address are populated.
+  // record before opening the edit form so fields like description,
+  // address, and photos are populated.
   const openEdit = async (property) => {
     const full = await fetchProperty(property.slug);
     setEditing(full);
     setFormOpen(true);
   };
 
-  const handleSubmit = async (values) => {
-    if (editing) {
-      await updateMutation.mutateAsync({ slug: editing.slug, payload: values });
-    } else {
-      await createMutation.mutateAsync(values);
-    }
+  const closeForm = () => {
+    setFormOpen(false);
+    invalidate();
   };
 
   const handleDelete = async () => {
@@ -129,7 +136,15 @@ export default function AdminPropertiesPage() {
         </TableContainer>
       )}
 
-      <PropertyFormDialog open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleSubmit} initialValues={editing} />
+      <PropertyFormDialog
+        open={formOpen}
+        onClose={closeForm}
+        onCreate={(payload) => createMutation.mutateAsync(payload)}
+        onUpdate={(slug, payload) => updateMutation.mutateAsync({ slug, payload })}
+        onUploadPhotos={(slug, files) => uploadPhotosMutation.mutateAsync({ slug, files })}
+        onDeletePhoto={(slug, photoId) => deletePhotoMutation.mutateAsync({ slug, photoId })}
+        initialValues={editing}
+      />
 
       <ConfirmDialog
         open={Boolean(deleting)}

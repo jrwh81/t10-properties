@@ -30,6 +30,7 @@ class PropertySerializer
       full_address: property.full_address,
       listed_at: property.listed_at,
       photo_urls: property.photos.map { |photo| photo_url(photo) },
+      photos: property.photos.map { |photo| { id: photo.id, url: photo_url(photo) } },
       created_at: property.created_at,
       updated_at: property.updated_at
     )

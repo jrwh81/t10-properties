@@ -37,6 +37,7 @@ RSpec.describe "Api::V1::Properties", type: :request do
       body = JSON.parse(response.body)["property"]
       expect(body["title"]).to eq(property.title)
       expect(body["full_address"]).to eq(property.full_address)
+      expect(body["photos"]).to eq([])
     end
   end
 

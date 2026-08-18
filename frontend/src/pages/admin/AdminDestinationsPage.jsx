@@ -19,9 +19,11 @@ import AddIcon from "@mui/icons-material/Add";
 import {
   createDestination,
   deleteDestination,
+  deleteDestinationPhoto,
   fetchDestination,
   fetchDestinations,
-  updateDestination
+  updateDestination,
+  uploadDestinationPhotos
 } from "../../api/destinations";
 import DestinationFormDialog from "../../components/Admin/DestinationFormDialog";
 import ConfirmDialog from "../../components/Admin/ConfirmDialog";
@@ -46,6 +48,8 @@ export default function AdminDestinationsPage() {
     onSuccess: invalidate
   });
   const deleteMutation = useMutation({ mutationFn: (slug) => deleteDestination(slug), onSuccess: invalidate });
+  const uploadPhotosMutation = useMutation({ mutationFn: ({ slug, files }) => uploadDestinationPhotos(slug, files) });
+  const deletePhotoMutation = useMutation({ mutationFn: ({ slug, photoId }) => deleteDestinationPhoto(slug, photoId) });
 
   const openCreate = () => {
     setEditing(null);
@@ -58,12 +62,9 @@ export default function AdminDestinationsPage() {
     setFormOpen(true);
   };
 
-  const handleSubmit = async (values) => {
-    if (editing) {
-      await updateMutation.mutateAsync({ slug: editing.slug, payload: values });
-    } else {
-      await createMutation.mutateAsync(values);
-    }
+  const closeForm = () => {
+    setFormOpen(false);
+    invalidate();
   };
 
   const handleDelete = async () => {
@@ -132,8 +133,11 @@ export default function AdminDestinationsPage() {
 
       <DestinationFormDialog
         open={formOpen}
-        onClose={() => setFormOpen(false)}
-        onSubmit={handleSubmit}
+        onClose={closeForm}
+        onCreate={(payload) => createMutation.mutateAsync(payload)}
+        onUpdate={(slug, payload) => updateMutation.mutateAsync({ slug, payload })}
+        onUploadPhotos={(slug, files) => uploadPhotosMutation.mutateAsync({ slug, files })}
+        onDeletePhoto={(slug, photoId) => deletePhotoMutation.mutateAsync({ slug, photoId })}
         initialValues={editing}
       />
 
