@@ -13,7 +13,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { isBotRequest, renderMetaHtml, truncateForPreview } from "./server/metaHtml.js";
+import { isBotRequest, renderMetaHtml, shouldRedirectToHttps, truncateForPreview } from "./server/metaHtml.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = path.join(__dirname, "dist");
@@ -36,6 +36,15 @@ async function fetchJson(apiPath) {
 }
 
 const app = express();
+
+// Force HTTPS on every request, on both the apex and www hosts, before
+// anything else runs (bot detection, static files, SPA fallback).
+app.use((req, res, next) => {
+  if (shouldRedirectToHttps(req.headers)) {
+    return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+  }
+  next();
+});
 
 app.get("/properties/:slug", async (req, res, next) => {
   if (!isBotRequest(req.headers["user-agent"])) return next();

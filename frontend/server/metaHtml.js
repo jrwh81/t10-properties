@@ -7,6 +7,18 @@
 export const BOT_USER_AGENT_PATTERN =
   /facebookexternalhit|Facebot|Twitterbot|Slackbot|Discordbot|WhatsApp|TelegramBot|LinkedInBot|Pinterest|SkypeUriPreview|redditbot|Applebot|iMessage|Googlebot|bingbot|W3C_Validator|Iframely|Embedly/i;
 
+// Heroku terminates SSL at its router/load balancer and forwards requests
+// to the dyno over plain HTTP internally, setting X-Forwarded-Proto to
+// indicate what the original client connection actually was. Heroku's
+// free ACM certificate makes HTTPS *available* on a custom domain, but
+// doesn't force HTTP requests to upgrade -- the app has to do that itself.
+// Checking specifically for "http" (not just "not https") means this is a
+// no-op when there's no proxy in front at all (e.g. plain `node server.js`
+// locally), since that header simply won't be present.
+export function shouldRedirectToHttps(headers = {}) {
+  return headers["x-forwarded-proto"] === "http";
+}
+
 export function isBotRequest(userAgent) {
   return BOT_USER_AGENT_PATTERN.test(userAgent || "");
 }

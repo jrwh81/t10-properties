@@ -79,6 +79,29 @@ npm run dev
 
 ## Changelog
 
+**v26** — Force HTTP to HTTPS on the frontend. Heroku's free ACM
+certificate makes HTTPS *available* on a custom domain, it doesn't force
+HTTP requests to upgrade -- that's on the app. The Rails API already had
+this (`config.force_ssl = true`), but swapping the frontend from `serve`
+to a custom Express server (v24) dropped that enforcement without
+anyone adding it back. Added redirect middleware (`shouldRedirectToHttps`
+in `server/metaHtml.js`, unit tested) that checks Heroku's
+`X-Forwarded-Proto` header -- Heroku terminates SSL at its router and
+forwards to the dyno over plain HTTP internally, setting that header to
+say what the original client connection actually was. Checking
+specifically for `"http"` (not just "not https") makes this a no-op with
+no proxy in front at all, e.g. running `node server.js` locally.
+
+**v25** — Pinned `engines.node`/`engines.npm` in `frontend/package.json`
+to match the versions in `.tool-versions` (Node 22.22.2, npm 10.9.7).
+Heroku's build environment was running a newer npm (11.x) than local dev
+(10.9.7); different npm major versions can interpret/validate
+`package-lock.json` differently, which can make `npm ci` pass locally
+while failing with "npm lockfile is not in sync" on Heroku even though
+the lockfile genuinely is in sync. Pinning `engines` makes Heroku install
+the exact same npm version used locally instead of whatever it defaults
+to for a given Node version.
+
 **v24** — Two additions. (1) Per-page social share previews: property,
 destination, and blog post links now show that page's own photo and
 title/description when shared, instead of the generic site-wide image.

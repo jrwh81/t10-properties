@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { escapeHtml, isBotRequest, removeMetaTag, renderMetaHtml, replaceMetaContent, truncateForPreview } from "./metaHtml.js";
+import { escapeHtml, isBotRequest, removeMetaTag, renderMetaHtml, replaceMetaContent, shouldRedirectToHttps, truncateForPreview } from "./metaHtml.js";
 
 // A trimmed-down stand-in for the real built index.html -- same meta tag
 // shapes/attribute ordering, so the regexes are exercised the same way,
@@ -53,6 +53,21 @@ describe("isBotRequest", () => {
   it("handles a missing user agent", () => {
     expect(isBotRequest(undefined)).toBe(false);
     expect(isBotRequest("")).toBe(false);
+  });
+});
+
+describe("shouldRedirectToHttps", () => {
+  it("redirects when Heroku's proxy reports the original request was http", () => {
+    expect(shouldRedirectToHttps({ "x-forwarded-proto": "http" })).toBe(true);
+  });
+
+  it("does not redirect when the original request was already https", () => {
+    expect(shouldRedirectToHttps({ "x-forwarded-proto": "https" })).toBe(false);
+  });
+
+  it("does not redirect when there's no proxy in front at all (e.g. local dev)", () => {
+    expect(shouldRedirectToHttps({})).toBe(false);
+    expect(shouldRedirectToHttps()).toBe(false);
   });
 });
 
